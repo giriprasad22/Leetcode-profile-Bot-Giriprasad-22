@@ -35,3 +35,7 @@ Configuration
 Edit the .env file with your credentials:
 API_KEY=your_optional_api_key_here
 
+Run Application 
+
+In Terminal : python3 main.py
+
