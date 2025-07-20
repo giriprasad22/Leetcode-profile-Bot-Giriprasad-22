@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode ChatBot</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="bot-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="header-text">
+                <h1>LeetCode Bot</h1>
+                <p>Powered by GraphQL API | M Giri Prasad</p>
+            </div>
+        </div>
+        
+        <div class="chat-window" id="chatWindow">
+            <div class="bot-message">
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="message-text">
+                        Hello! I can fetch LeetCode profile stats or answer coding questions. 
+                        <br>Toggle the <i class="fas fa-robot"></i> button to switch modes.
+                    </div>
+                </div>
+                <div class="message-time">{{ current_time }}</div>
+            </div>
+            
+            <!-- Display LeetCode results if available -->
+            {% if stats %}
+            <div class="user-message">
+                <div class="message-content">
+                    <div class="message-text">{{ stats.username }}</div>
+                </div>
+                <div class="message-time">{{ current_time }}</div>
+            </div>
+            
+            <div class="bot-message">
+                <div class="message-content">
+                    <div class="message-text">
+                        <strong>📊 LeetCode Profile: @{{ stats.username }}</strong>
+                        <div class="profile-data">
+                            <div class="profile-header">
+                                {% if stats.rank %}
+                                <span class="rank-badge">🏆 Rank #{{ "{:,}".format(stats.rank) }}</span>
+                                {% else %}
+                                <span class="rank-badge">🏆 Rank: N/A</span>
+                                {% endif %}
+                                <span class="rank-badge">✅ Total Solved: {{ stats.total_solved }}</span>
+                            </div>
+                            
+                            <div class="stats-grid">
+                                <div class="stat-card easy">
+                                    <div class="stat-value">{{ stats.problems.get('Easy', 0) }}</div>
+                                    <div class="stat-label">Easy</div>
+                                </div>
+                                <div class="stat-card medium">
+                                    <div class="stat-value">{{ stats.problems.get('Medium', 0) }}</div>
+                                    <div class="stat-label">Medium</div>
+                                </div>
+                                <div class="stat-card hard">
+                                    <div class="stat-value">{{ stats.problems.get('Hard', 0) }}</div>
+                                    <div class="stat-label">Hard</div>
+                                </div>
+                            </div>
+                            
+                            {% if stats.languages %}
+                            <div class="languages-section">
+                                <h3><i class="fas fa-code"></i> Top Languages</h3>
+                                <div class="language-bars">
+                                    {% for lang, count in stats.languages.items() %}
+                                    <div class="language-bar">
+                                        <div class="language-name">{{ lang }}</div>
+                                        <div class="language-count">{{ count }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if stats.badges %}
+                            <div class="badges-section">
+                                <h3><i class="fas fa-shield-alt"></i> Badges ({{ stats.badges | length }})</h3>
+                                <div class="badges-container">
+                                    {% for badge in stats.badges %}
+                                    <span class="badge">{{ badge }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="message-time">{{ current_time }}</div>
+            </div>
+            {% endif %}
+            
+            <!-- Display Gemini response if available -->
+            {% if gemini_response %}
+            <div class="user-message">
+                <div class="message-content">
+                    <div class="message-text">{{ request.form.get('username', '') }}</div>
+                </div>
+                <div class="message-time">{{ current_time }}</div>
+            </div>
+            
+            <div class="bot-message">
+                <div class="message-content">
+                    <div class="message-text">{{ gemini_response }}</div>
+                </div>
+                <div class="message-time">{{ current_time }}</div>
+            </div>
+            {% endif %}
+            
+            <!-- Display error if available -->
+            {% if error %}
+            <div class="user-message">
+                <div class="message-content">
+                    <div class="message-text">{{ request.form.get('username', '') }}</div>
+                </div>
+                <div class="message-time">{{ current_time }}</div>
+            </div>
+            
+            <div class="bot-message error">
+                <div class="message-content">
+                    <div class="message-text">
+                        <i class="fas fa-exclamation-circle"></i> Error: {{ error }}
+                    </div>
+                </div>
+                <div class="message-time">{{ current_time }}</div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="input-area">
+            <form method="POST" id="profileForm" onsubmit="return handleSubmit(event)">
+                <input type="text" name="username" id="usernameInput" 
+                       placeholder="Enter LeetCode username (e.g. 'leetcode')" 
+                       autocomplete="off" required>
+                <button type="submit" class="send-button">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+                <button type="button" id="geminiToggle" class="send-button gemini-btn" title="Toggle Gemini Mode">
+                    <i class="fas fa-robot"></i>
+                </button>
+                <input type="hidden" name="gemini_mode" id="geminiMode" value="false">
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let geminiEnabled = false;
+
+        // Toggle button functionality
+        document.getElementById('geminiToggle').addEventListener('click', function() {
+            geminiEnabled = !geminiEnabled;
+            this.classList.toggle('active', geminiEnabled);
+            document.getElementById('geminiMode').value = geminiEnabled;
+            document.getElementById('usernameInput').placeholder = geminiEnabled ? 
+                "Ask coding questions..." : 
+                "Enter LeetCode username (e.g. 'leetcode')";
+            addSystemMessage(geminiEnabled ? 
+                "Gemini mode activated - Ask coding questions" : 
+                "LeetCode mode activated - Enter username for stats");
+        });
+
+        // Handle form submission
+        function handleSubmit(event) {
+            event.preventDefault();
+            const input = document.getElementById('usernameInput').value.trim();
+            if (!input) return false;
+            
+            addUserMessage(input);
+            showLoadingMessage();
+            document.getElementById('usernameInput').value = '';
+            
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `username=${encodeURIComponent(input)}&gemini_mode=${geminiEnabled}`
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.querySelector('.bot-message.loading')?.remove();
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                const chatWindow = document.getElementById('chatWindow');
+                
+                // Handle both Gemini and LeetCode responses
+                const newMessages = tempDiv.querySelector('#chatWindow').children;
+                Array.from(newMessages).forEach(msg => {
+                    if (msg.classList.contains('bot-message') || 
+                        msg.classList.contains('user-message')) {
+                        chatWindow.appendChild(msg.cloneNode(true));
+                    }
+                });
+                
+                scrollToBottom();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.querySelector('.bot-message.loading')?.remove();
+                addErrorMessage('Failed to fetch data. Please try again.');
+            });
+            
+            return false;
+        }
+
+        // Add user message to chat
+        function addUserMessage(text) {
+            const chatWindow = document.getElementById('chatWindow');
+            const userMsg = document.createElement('div');
+            userMsg.className = 'user-message';
+            userMsg.innerHTML = `
+                <div class="message-content">
+                    <div class="message-text">${escapeHtml(text)}</div>
+                </div>
+                <div class="message-time">${getCurrentTime()}</div>
+            `;
+            chatWindow.appendChild(userMsg);
+            scrollToBottom();
+        }
+
+        // Show loading indicator
+        function showLoadingMessage() {
+            const chatWindow = document.getElementById('chatWindow');
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'bot-message loading';
+            loadingMsg.innerHTML = `
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="message-text">${geminiEnabled ? 'Asking Gemini...' : 'Fetching LeetCode data...'}</div>
+                </div>
+                <div class="message-time">${getCurrentTime()}</div>
+            `;
+            chatWindow.appendChild(loadingMsg);
+            scrollToBottom();
+        }
+
+        // Add system message
+        function addSystemMessage(text) {
+            const chatWindow = document.getElementById('chatWindow');
+            const sysMsg = document.createElement('div');
+            sysMsg.className = 'bot-message system';
+            sysMsg.innerHTML = `
+                <div class="message-content">
+                    <div class="message-text"><i>${text}</i></div>
+                </div>
+                <div class="message-time">${getCurrentTime()}</div>
+            `;
+            chatWindow.appendChild(sysMsg);
+            scrollToBottom();
+        }
+
+        // Add error message
+        function addErrorMessage(text) {
+            const chatWindow = document.getElementById('chatWindow');
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'bot-message error';
+            errorMsg.innerHTML = `
+                <div class="message-content">
+                    <div class="message-text">
+                        <i class="fas fa-exclamation-circle"></i> ${escapeHtml(text)}
+                    </div>
+                </div>
+                <div class="message-time">${getCurrentTime()}</div>
+            `;
+            chatWindow.appendChild(errorMsg);
+            scrollToBottom();
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Get current time in HH:MM format
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        // Auto-scroll to bottom of chat
+        function scrollToBottom() {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // Focus input on page load
+        window.addEventListener('load', function() {
+            document.getElementById('usernameInput').focus();
+            scrollToBottom();
+        });
+
+        // Handle Enter key
+        document.getElementById('usernameInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('profileForm').dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>
