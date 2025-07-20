@@ -5,11 +5,17 @@ A bot that fetches and displays your LeetCode profile statistics.
 ## Current Structure
 
 .
+
 ├── main.py # Main bot script
+
 ├── requirements.txt # Python dependencies
+
 ├── static/ # Static files (CSS/images)
+
 ├── templates/ # HTML templates
+
 ├── .env # Environment configuration
+
 └── README.md # This file
 
 
