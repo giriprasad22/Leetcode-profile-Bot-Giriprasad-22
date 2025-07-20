@@ -22,8 +22,11 @@ A bot that fetches and displays your LeetCode profile statistics.
 ## Setup
 
 Clone the repository:
-```bash
+
+bash
+
 git clone https://github.com/giriprasad22/Leetcode-profile-Bot-Giriprasad-22.git
+
 
 Install dependencies:
 pip install -r requirements.txt
