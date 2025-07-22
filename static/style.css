@@ -37,6 +37,7 @@ body {
     line-height: 1.6;
 }
 
+
 .chat-container {
     width: 100%;
     max-width: 600px;
@@ -49,6 +50,7 @@ body {
     box-shadow: var(--shadow);
     transition: all 0.3s ease;
 }
+
 
 .chat-header {
     background: var(--primary);
@@ -91,6 +93,7 @@ body {
     flex-direction: column;
     gap: 15px;
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
 }
 
 .bot-message, .user-message {
@@ -115,6 +118,23 @@ body {
 .user-message .message-content {
     background: var(--user-msg);
     border-bottom-right-radius: 5px;
+}
+
+.bot-message .message-content pre {
+    background-color: #333;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9em;
+    color: #e6e6e6;
+}
+
+.bot-message .message-content code {
+    background-color: #444;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #ffa116;
 }
 
 .system .message-content {
@@ -157,6 +177,7 @@ body {
     padding: 15px;
     background: var(--chat-bg);
     border-top: 1px solid #444;
+    flex-shrink: 0;
 }
 
 .input-area form {
@@ -440,8 +461,13 @@ body {
     }
     
     .chat-container {
-        height: 90vh;
+        width: 100vw;
+        height: 100vh;
+        max-width: 100vw;
         max-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
     }
     
     .stats-grid {
