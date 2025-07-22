@@ -4,6 +4,7 @@ import time
 from dotenv import load_dotenv
 import os
 import google.generativeai as genai
+import markdown
 
 # Load environment variables
 load_dotenv()
@@ -80,6 +81,12 @@ def get_leetcode_data(username):
             
     return {"errors": [{"message": "API request failed after multiple attempts"}]}
 
+def is_code_question(question):
+    keywords = ["code", "implement", "function", "algorithm", "how to", "write", "in python", "java", "c++", "javascript"]
+    q_lower = question.lower()
+    return any(kw in q_lower for kw in keywords)
+
+
 @app.route("/", methods=["GET", "POST"])
 def home():
     current_time = time.strftime("%I:%M %p")
@@ -94,14 +101,21 @@ def home():
                     error="Question cannot be empty",
                     current_time=current_time
                 )
-            
             try:
-                response = gemini_model.generate_content(
-                    f"Answer this coding question concisely: {question}"
-                )
+                if is_code_question(question):
+                    response = gemini_model.generate_content(
+                        f"Only provide the direct and complete code solution for the following question, with no explanations, citations, or comments. Use neat formatting and Python unless another language is specified.\n\nQuestion: {question}"
+                    )
+                    # Optional: use markdown conversion for code block rendering
+                    rendered_html = markdown.markdown(response.text, extensions=['fenced_code', 'codehilite'])
+                else:
+                    response = gemini_model.generate_content(
+                        f"Answer the following question in plain text with clear explanation. Do not include references or citations.\n\nQuestion: {question}"
+                    )
+                    rendered_html = markdown.markdown(response.text)  # Handles any simple markdown Gemini outputs
                 return render_template(
                     "index.html",
-                    gemini_response=response.text,
+                    gemini_response=rendered_html,
                     current_time=current_time
                 )
             except Exception as e:
@@ -110,6 +124,7 @@ def home():
                     error=f"Gemini error: {str(e)}",
                     current_time=current_time
                 )
+
         
         # Original LeetCode lookup
         username = request.form.get("username", "").strip()
